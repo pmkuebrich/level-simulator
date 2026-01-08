@@ -1,0 +1,323 @@
+import React, { useState } from 'react';
+import { Droplets, Activity } from 'lucide-react';
+
+export default function LevelTransmitterSimulator() {
+  const [level, setLevel] = useState(50);
+  
+  // Calculate 4-20mA output based on level (0-100%)
+  const calculateCurrent = (lvl) => {
+    return 4 + (lvl / 100) * 16;
+  };
+  
+  const current = calculateCurrent(level);
+  
+  // Determine liquid color based on level
+  const getLiquidColor = (lvl) => {
+    if (lvl < 25) return { primary: '#ef4444', secondary: '#dc2626' }; // Red - low
+    if (lvl < 50) return { primary: '#f59e0b', secondary: '#d97706' }; // Orange - medium-low
+    if (lvl < 75) return { primary: '#10b981', secondary: '#059669' }; // Green - medium-high
+    return { primary: '#06b6d4', secondary: '#0891b2' }; // Cyan - high
+  };
+  
+  const liquidColor = getLiquidColor(level);
+  
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-teal-900 to-slate-900 p-8">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-white mb-2">
+            Level Transmitter Simulator
+          </h1>
+          <p className="text-teal-200 text-lg">
+            4-20mA Current Loop Signal Visualization
+          </p>
+        </div>
+        
+        {/* Slider Control */}
+        <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 shadow-2xl mb-8">
+          <h3 className="text-xl font-semibold text-white mb-4 text-center">
+            Adjust Tank Level
+          </h3>
+          
+          <div className="max-w-3xl mx-auto">
+            <input
+              type="range"
+              min="0"
+              max="100"
+              step="0.1"
+              value={level}
+              onChange={(e) => setLevel(parseFloat(e.target.value))}
+              className="w-full h-3 bg-slate-700 rounded-lg appearance-none cursor-pointer slider"
+              style={{
+                background: `linear-gradient(to right, #ef4444 0%, ${liquidColor.primary} ${level}%, #334155 ${level}%, #334155 100%)`
+              }}
+            />
+            
+            <div className="flex justify-between text-teal-200 text-sm mt-2">
+              <span>0% / 4 mA</span>
+              <span>50% / 12 mA</span>
+              <span>100% / 20 mA</span>
+            </div>
+          </div>
+        </div>
+        
+        {/* Main Content */}
+        <div className="grid grid-cols-2 gap-8 mb-8">
+          {/* Tank Level Gauge */}
+          <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 shadow-2xl">
+            <div className="flex items-center justify-center mb-6">
+              <Droplets className="w-8 h-8 text-teal-300 mr-3" />
+              <h2 className="text-2xl font-semibold text-white">Tank Level Input</h2>
+            </div>
+            
+            {/* Tank Visualization */}
+            <div className="relative w-64 h-96 mx-auto mb-6">
+              <svg viewBox="0 0 200 320" className="w-full h-full">
+                <defs>
+                  {/* Liquid gradient */}
+                  <linearGradient id="liquidGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stopColor={liquidColor.primary} stopOpacity="0.9"/>
+                    <stop offset="100%" stopColor={liquidColor.secondary} stopOpacity="1"/>
+                  </linearGradient>
+                  
+                  {/* Wave pattern for liquid surface */}
+                  <pattern id="wave" x="0" y="0" width="40" height="8" patternUnits="userSpaceOnUse">
+                    <path d="M0,4 Q10,0 20,4 T40,4" fill="none" stroke="white" strokeWidth="1" opacity="0.3"/>
+                  </pattern>
+                  
+                  {/* Glass shine effect */}
+                  <linearGradient id="glassShine" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="white" stopOpacity="0"/>
+                    <stop offset="50%" stopColor="white" stopOpacity="0.2"/>
+                    <stop offset="100%" stopColor="white" stopOpacity="0"/>
+                  </linearGradient>
+                  
+                  {/* Glow effect */}
+                  <filter id="glow">
+                    <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                    <feMerge>
+                      <feMergeNode in="coloredBlur"/>
+                      <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                  </filter>
+                </defs>
+                
+                {/* Tank body outline */}
+                <path d="M 50 20 L 50 280 Q 50 300 70 300 L 130 300 Q 150 300 150 280 L 150 20 Q 150 10 140 10 L 60 10 Q 50 10 50 20 Z" 
+                      fill="#1e293b" stroke="#475569" strokeWidth="3"/>
+                
+                {/* Level markers on tank */}
+                {[0, 25, 50, 75, 100].map((pct, i) => {
+                  const y = 280 - (pct / 100) * 260;
+                  return (
+                    <g key={i}>
+                      <line x1="45" y1={y} x2="55" y2={y} stroke="#64748b" strokeWidth="2"/>
+                      <line x1="145" y1={y} x2="155" y2={y} stroke="#64748b" strokeWidth="2"/>
+                      <text x="35" y={y + 4} textAnchor="end" fill="#94a3b8" fontSize="12" fontWeight="bold">
+                        {pct}%
+                      </text>
+                      <text x="165" y={y + 4} textAnchor="start" fill="#94a3b8" fontSize="12" fontWeight="bold">
+                        {pct}%
+                      </text>
+                    </g>
+                  );
+                })}
+                
+                {/* Liquid fill */}
+                <path d={`M 52 ${280 - (level / 100) * 260} L 52 278 Q 52 298 70 298 L 130 298 Q 148 298 148 278 L 148 ${280 - (level / 100) * 260} Z`}
+                      fill="url(#liquidGradient)" 
+                      filter="url(#glow)"/>
+                
+                {/* Animated waves on liquid surface */}
+                {level > 0 && (
+                  <>
+                    <rect x="52" y={280 - (level / 100) * 260 - 4} width="96" height="8" fill="url(#wave)">
+                      <animate attributeName="x" from="52" to="12" dur="3s" repeatCount="indefinite" />
+                    </rect>
+                  </>
+                )}
+                
+                {/* Glass shine overlay */}
+                <rect x="55" y="20" width="30" height="270" fill="url(#glassShine)" opacity="0.4"/>
+                
+                {/* Tank nozzle/pipe at bottom */}
+                <rect x="85" y="298" width="30" height="15" fill="#334155" stroke="#475569" strokeWidth="2"/>
+                <rect x="95" y="313" width="10" height="7" fill="#334155" stroke="#475569" strokeWidth="2"/>
+                
+                {/* Tank top dome */}
+                <ellipse cx="100" cy="10" rx="50" ry="8" fill="#1e293b" stroke="#475569" strokeWidth="3"/>
+                
+                {/* Transmitter sensor on side */}
+                <rect x="155" y="140" width="20" height="30" rx="3" fill="#64748b" stroke="#334155" strokeWidth="2"/>
+                <circle cx="165" cy="155" r="5" fill="#10b981" opacity="0.8">
+                  <animate attributeName="opacity" values="0.8;1;0.8" dur="2s" repeatCount="indefinite" />
+                </circle>
+                <line x1="150" y1="155" x2="155" y2="155" stroke="#64748b" strokeWidth="2"/>
+              </svg>
+            </div>
+            
+            {/* Digital Display */}
+            <div className="bg-black/50 rounded-lg p-4 text-center border border-teal-500/30 mb-4">
+              <div className="text-5xl font-bold font-mono" style={{color: liquidColor.primary}}>
+                {level.toFixed(1)}
+              </div>
+              <div className="text-teal-300 text-sm mt-1">% LEVEL</div>
+            </div>
+            
+            {/* Level Status Indicators */}
+            <div className="grid grid-cols-4 gap-2 text-center text-xs">
+              <div className={`rounded p-2 border ${level < 25 ? 'bg-red-500/30 border-red-500/50' : 'bg-red-500/10 border-red-500/20'}`}>
+                <div className="text-red-300 font-semibold">Low</div>
+                <div className="text-red-200">&lt;25%</div>
+              </div>
+              <div className={`rounded p-2 border ${level >= 25 && level < 50 ? 'bg-orange-500/30 border-orange-500/50' : 'bg-orange-500/10 border-orange-500/20'}`}>
+                <div className="text-orange-300 font-semibold">Med-Low</div>
+                <div className="text-orange-200">25-50%</div>
+              </div>
+              <div className={`rounded p-2 border ${level >= 50 && level < 75 ? 'bg-green-500/30 border-green-500/50' : 'bg-green-500/10 border-green-500/20'}`}>
+                <div className="text-green-300 font-semibold">Med-High</div>
+                <div className="text-green-200">50-75%</div>
+              </div>
+              <div className={`rounded p-2 border ${level >= 75 ? 'bg-cyan-500/30 border-cyan-500/50' : 'bg-cyan-500/10 border-cyan-500/20'}`}>
+                <div className="text-cyan-300 font-semibold">High</div>
+                <div className="text-cyan-200">&gt;75%</div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Controller/Display */}
+          <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 shadow-2xl">
+            <div className="flex items-center justify-center mb-6">
+              <Activity className="w-8 h-8 text-green-300 mr-3" />
+              <h2 className="text-2xl font-semibold text-white">Current Output</h2>
+            </div>
+            
+            {/* Controller Display */}
+            <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-8 mb-6 border-4 border-slate-700 shadow-inner">
+              {/* LED Indicator */}
+              <div className="flex items-center justify-center mb-4">
+                <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse shadow-lg shadow-green-500/50 mr-2"></div>
+                <span className="text-green-300 text-sm">TRANSMITTING</span>
+              </div>
+              
+              {/* Current Display */}
+              <div className="bg-black rounded-lg p-6 mb-4 border border-green-900/50">
+                <div className="text-6xl font-bold text-green-400 font-mono text-center">
+                  {current.toFixed(2)}
+                </div>
+                <div className="text-green-300 text-center mt-2">mA</div>
+              </div>
+              
+              {/* Bar Graph */}
+              <div className="bg-black/50 rounded-lg p-4 border border-slate-600">
+                <div className="text-green-300 text-xs mb-2 text-center">Signal Strength</div>
+                <div className="w-full h-8 bg-slate-800 rounded-full overflow-hidden border border-slate-600">
+                  <div
+                    className="h-full transition-all duration-300 ease-out"
+                    style={{ 
+                      width: `${((current - 4) / 16) * 100}%`,
+                      background: `linear-gradient(to right, ${liquidColor.primary}, ${liquidColor.secondary})`
+                    }}
+                  ></div>
+                </div>
+                <div className="flex justify-between text-xs text-slate-400 mt-1">
+                  <span>4mA</span>
+                  <span>12mA</span>
+                  <span>20mA</span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Calculation Info */}
+            <div className="bg-teal-900/30 rounded-lg p-4 border border-teal-500/30 mb-4">
+              <h3 className="text-white font-semibold mb-2 text-sm">Conversion Formula:</h3>
+              <div className="text-teal-200 text-sm font-mono">
+                I = 4 + (L / 100) × 16
+              </div>
+              <div className="text-teal-300 text-xs mt-2">
+                where L = level (0-100%)<br/>
+                and I = current (4-20 mA)
+              </div>
+            </div>
+            
+            {/* Current Values */}
+            <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-600 mb-4">
+              <div className="grid grid-cols-3 gap-3 text-center text-xs">
+                <div>
+                  <div className="text-slate-400">Empty</div>
+                  <div className="text-white font-semibold mt-1">0%</div>
+                  <div className="text-green-400">4.00 mA</div>
+                </div>
+                <div>
+                  <div className="text-slate-400">Half Full</div>
+                  <div className="text-white font-semibold mt-1">50%</div>
+                  <div className="text-green-400">12.00 mA</div>
+                </div>
+                <div>
+                  <div className="text-slate-400">Full</div>
+                  <div className="text-white font-semibold mt-1">100%</div>
+                  <div className="text-green-400">20.00 mA</div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Alarm Status */}
+            <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-600">
+              <h3 className="text-white font-semibold mb-3 text-sm text-center">Alarm Status</h3>
+              <div className="space-y-2">
+                <div className={`flex items-center justify-between p-2 rounded ${level < 10 ? 'bg-red-500/30' : 'bg-slate-700/30'}`}>
+                  <span className="text-sm text-slate-300">Low Level Alarm</span>
+                  <span className={`text-xs font-semibold ${level < 10 ? 'text-red-400' : 'text-slate-500'}`}>
+                    {level < 10 ? 'ACTIVE' : 'Normal'}
+                  </span>
+                </div>
+                <div className={`flex items-center justify-between p-2 rounded ${level > 90 ? 'bg-red-500/30' : 'bg-slate-700/30'}`}>
+                  <span className="text-sm text-slate-300">High Level Alarm</span>
+                  <span className={`text-xs font-semibold ${level > 90 ? 'text-red-400' : 'text-slate-500'}`}>
+                    {level > 90 ? 'ACTIVE' : 'Normal'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Information Panel */}
+        <div className="bg-white/5 backdrop-blur-lg rounded-2xl p-6 border border-white/10">
+          <h3 className="text-xl font-semibold text-white mb-3">Level Transmitter Applications</h3>
+          <p className="text-teal-200 text-sm leading-relaxed">
+            Level transmitters are essential instruments in process industries for monitoring liquid levels in tanks, vessels, 
+            and silos. They use various technologies including ultrasonic, radar, capacitance, or pressure-based sensing. 
+            The 4-20mA output provides continuous level measurement that can be used for inventory management, process control, 
+            and alarm triggering. A 0% reading (4mA) indicates an empty tank, while 100% (20mA) indicates a full tank. 
+            Low and high-level alarms help prevent overflow conditions and ensure adequate supply for downstream processes.
+          </p>
+        </div>
+      </div>
+      
+      <style jsx>{`
+        .slider::-webkit-slider-thumb {
+          appearance: none;
+          width: 24px;
+          height: 24px;
+          background: linear-gradient(135deg, ${liquidColor.primary}, #06b6d4);
+          cursor: pointer;
+          border-radius: 50%;
+          border: 3px solid white;
+          box-shadow: 0 0 10px rgba(6, 182, 212, 0.5);
+        }
+        
+        .slider::-moz-range-thumb {
+          width: 24px;
+          height: 24px;
+          background: linear-gradient(135deg, ${liquidColor.primary}, #06b6d4);
+          cursor: pointer;
+          border-radius: 50%;
+          border: 3px solid white;
+          box-shadow: 0 0 10px rgba(6, 182, 212, 0.5);
+        }
+      `}</style>
+    </div>
+  );
+}
